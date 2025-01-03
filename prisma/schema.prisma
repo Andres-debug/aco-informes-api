@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Zona {
+  id          Int         @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  distritos   Distrito[]  // Relación con Distritos
+}
+
+
+model Distrito {
+  id            Int         @id @default(autoincrement())
+  nombreDistrito String
+  zonaId        Int
+  zona          Zona         @relation(fields: [zonaId], references: [id])
+  iglesias      Iglesia[]
+  usuarios Usuario[]
+}
+
+model Iglesia {
+  id            Int         @id @default(autoincrement())
+  nombreIglesia String
+  distritoId    Int
+  distrito      Distrito     @relation(fields: [distritoId], references: [id])
+  informes      Informe[]
+}
+
+model Usuario {
+  id            Int         @id @default(autoincrement())
+  nombre        String
+  email         String       @unique
+  password      String
+  rol           String       // 'pastor' o 'administrador'
+  distritoId    Int?
+  distrito      Distrito?    @relation(fields: [distritoId], references: [id])
+  informes      Informe[]
+}
+
+model Informe {
+  id            Int         @id @default(autoincrement())
+  actividad     String
+  gastosTransporte Float
+  fecha         DateTime
+  iglesiaId     Int
+  pastorId      Int
+  iglesia       Iglesia      @relation(fields: [iglesiaId], references: [id])
+  pastor        Usuario      @relation(fields: [pastorId], references: [id])
+}
