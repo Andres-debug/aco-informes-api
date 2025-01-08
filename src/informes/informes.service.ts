@@ -2,103 +2,63 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class InformesService {
+export class InformeService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Obtener todos los informes (solo para administradores)
-  async getAllInformes() {
-    return this.prisma.informe.findMany({
-      include: {
-        iglesia: { include: { distrito: { include: { zona: true } } } }, // Información completa de jerarquía
-        pastor: true, // Información del pastor
+  // Crear un informe
+  async createInforme(data: { titulo: string; periodoInicio: Date; periodoFin: Date; pastorId: number }) {
+    return this.prisma.informe.create({
+      data: {
+        titulo: data.titulo,
+        periodoInicio: data.periodoInicio,
+        periodoFin: data.periodoFin,
+        totalGastos: 0, // Asignar un valor inicial a totalGastos
+        totalActividades: 0, // Asignar un valor inicial a totalActividades
+        pastorId: data.pastorId, // Vinculamos el informe con el pastor existente
       },
     });
   }
 
-  // Obtener informes por pastor (solo para pastores)
+  // Obtener todos los informes de un pastor
   async getInformesByPastor(pastorId: number) {
     return this.prisma.informe.findMany({
       where: { pastorId },
       include: {
-        iglesia: true,
-      },
-    });
-  }
-
-  // Obtener informes filtrados por zona, distrito o iglesia
-  async getFilteredInformes(filter: {
-    zonaId?: number;
-    distritoId?: number;
-    iglesiaId?: number;
-  }) {
-    const { zonaId, distritoId, iglesiaId } = filter;
-    return this.prisma.informe.findMany({
-      where: {
-        iglesia: {
-          distrito: {
-            zonaId,
-            id: distritoId,
+        actividad: {
+          include: {
+            iglesia: true, // Incluye información de la iglesia en las actividades
           },
-          id: iglesiaId,
         },
       },
-      include: {
-        iglesia: { include: { distrito: true } },
-        pastor: true,
-      },
     });
   }
 
-  // Crear un informe
-  async createInforme(data: {
-    actividad: string;
-    gastosTransporte: number;
-    fecha: Date;
-    iglesiaId: number;
-    pastorId: number;
-  }) {
-    return this.prisma.informe.create({
-      data,
-    });
-  }
-
-  // Obtener un informe por ID
+  // Obtener un informe específico con todas sus actividades
   async getInformeById(id: number) {
     return this.prisma.informe.findUnique({
       where: { id },
       include: {
-        iglesia: { include: { distrito: true } },
-        pastor: true,
+        actividad: {
+          include: {
+            iglesia: true, // Incluye información de la iglesia
+          },
+        },
       },
     });
   }
 
-  // Actualizar un informe (solo pastores)
-  async updateInforme(
-    id: number,
-    data: { actividad?: string; gastosTransporte?: number },
-    pastorId: number,
-  ) {
-    // Verificar que el informe pertenece al pastor
-    const informe = await this.prisma.informe.findUnique({ where: { id } });
-    if (!informe || informe.pastorId !== pastorId) {
-      throw new Error('No tienes permisos para actualizar este informe.');
-    }
-
+  // Actualizar un informe (solo datos del informe, no actividades)
+  async updateInforme(id: number, data: Partial<{ titulo: string; periodoInicio: Date; periodoFin: Date }>) {
     return this.prisma.informe.update({
       where: { id },
       data,
     });
   }
 
-  // Eliminar un informe (solo pastores)
-  async deleteInforme(id: number, pastorId: number) {
-    // Verificar que el informe pertenece al pastor
-    const informe = await this.prisma.informe.findUnique({ where: { id } });
-    if (!informe || informe.pastorId !== pastorId) {
-      throw new Error('No tienes permisos para eliminar este informe.');
-    }
-
-    return this.prisma.informe.delete({ where: { id } });
+  // Eliminar un informe (y todas sus actividades asociadas)
+  async deleteInforme(id: number) {
+    return this.prisma.informe.delete({
+      where: { id },
+    });
   }
 }

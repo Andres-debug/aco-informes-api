@@ -1,62 +1,84 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+model actividad {
+  id               Int      @id @default(autoincrement())
+  titulo           String
+  descripcion      String
+  fecha            DateTime
+  gastosTransporte Float
+  iglesiaId        Int
+  pastorId         Int
+  informeId        Int?
+  createdAt        DateTime @default(now())
+  iglesia          iglesia  @relation(fields: [iglesiaId], references: [id], map: "Actividad_iglesiaId_fkey")
+  informe          informe? @relation(fields: [informeId], references: [id], map: "Actividad_informeId_fkey")
+  usuario          usuario  @relation(fields: [pastorId], references: [id], map: "Actividad_pastorId_fkey")
 
-model Zona {
-  id          Int         @id @default(autoincrement())
-  nombre      String
-  descripcion String
-  distritos   Distrito[]  // Relación con Distritos
+  @@index([iglesiaId], map: "Actividad_iglesiaId_fkey")
+  @@index([informeId], map: "Actividad_informeId_fkey")
+  @@index([pastorId], map: "Actividad_pastorId_fkey")
 }
 
-
-model Distrito {
-  id            Int         @id @default(autoincrement())
+model distrito {
+  id             Int       @id @default(autoincrement())
   nombreDistrito String
-  zonaId        Int
-  zona          Zona         @relation(fields: [zonaId], references: [id])
-  iglesias      Iglesia[]
-  usuarios Usuario[]
+  zonaId         Int
+  zona           zona      @relation(fields: [zonaId], references: [id], map: "Distrito_zonaId_fkey")
+  iglesia        iglesia[]
+  usuario        usuario[]
+
+  @@index([zonaId], map: "Distrito_zonaId_fkey")
 }
 
-model Iglesia {
+model iglesia {
   id            Int         @id @default(autoincrement())
   nombreIglesia String
   distritoId    Int
-  distrito      Distrito     @relation(fields: [distritoId], references: [id])
-  informes      Informe[]
+  actividad     actividad[]
+  distrito      distrito    @relation(fields: [distritoId], references: [id], map: "Iglesia_distritoId_fkey")
+
+  @@index([distritoId], map: "Iglesia_distritoId_fkey")
 }
 
-model Usuario {
-  id            Int         @id @default(autoincrement())
-  nombre        String
-  email         String       @unique
-  password      String
-  rol           String       // 'pastor' o 'administrador'
-  distritoId    Int?
-  distrito      Distrito?    @relation(fields: [distritoId], references: [id])
-  informes      Informe[]
+model informe {
+  id               Int         @id @default(autoincrement())
+  titulo           String
+  periodoInicio    DateTime
+  periodoFin       DateTime
+  pastorId         Int
+  totalGastos      Float
+  totalActividades Int
+  createdAt        DateTime    @default(now())
+  actividad        actividad[]
+  usuario          usuario     @relation(fields: [pastorId], references: [id], map: "Informe_pastorId_fkey")
+
+  @@index([pastorId], map: "Informe_pastorId_fkey")
 }
 
-model Informe {
-  id            Int         @id @default(autoincrement())
-  actividad     String
-  gastosTransporte Float
-  fecha         DateTime
-  iglesiaId     Int
-  pastorId      Int
-  iglesia       Iglesia      @relation(fields: [iglesiaId], references: [id])
-  pastor        Usuario      @relation(fields: [pastorId], references: [id])
+model usuario {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  email      String      @unique(map: "Usuario_email_key")
+  password   String
+  rol        String
+  distritoId Int?
+  actividad  actividad[]
+  informe    informe[]
+  distrito   distrito?   @relation(fields: [distritoId], references: [id], map: "Usuario_distritoId_fkey")
+
+  @@index([distritoId], map: "Usuario_distritoId_fkey")
+}
+
+model zona {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  distrito    distrito[]
 }

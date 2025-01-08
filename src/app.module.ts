@@ -8,9 +8,10 @@ import { IglesiasModule } from './iglesias/iglesias.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { InformesModule } from './informes/informes.module';
+import { ActividadesModule } from './actividades/actividades.module';
 
 @Module({
-  imports: [PrismaModule, ZonasModule, DistritosModule, IglesiasModule, UsuariosModule, AuthModule, InformesModule],
+  imports: [PrismaModule, ZonasModule, DistritosModule, IglesiasModule, UsuariosModule, AuthModule, InformesModule, ActividadesModule],
   controllers: [AppController],
   providers: [AppService],
 })
