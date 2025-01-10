@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -10,6 +10,29 @@ export class DistritoService {
     return this.prisma.distrito.findMany({
       include: { zona: true, iglesia: true, usuario: true },
     });
+  }
+
+  async getMiDistrito(userId: number) {
+    console.log(`Buscando distrito para el usuario con ID: ${userId}`); // Log para depuración
+
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      include: {
+        distrito: {
+          include: {
+            iglesia: true, // Relación con iglesias en el distrito
+          },
+        },
+      },
+    });
+
+    if (!usuario || !usuario.distrito) {
+      throw new NotFoundException('El usuario no tiene un distrito asignado.');
+    }
+
+    console.log(`Distrito encontrado para el usuario:`, usuario.distrito); // Log para depuración
+
+    return usuario.distrito;
   }
 
   // Obtener distritos por zona

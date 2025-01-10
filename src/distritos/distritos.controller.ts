@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { DistritoService } from './distritos.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('distritos')
 export class DistritoController {
@@ -13,6 +14,17 @@ export class DistritoController {
   @Get('zona/:zonaId')
   async getDistritosByZona(@Param('zonaId') zonaId: string) {
     return this.distritoService.getDistritosByZona(Number(zonaId));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mi-distrito')
+  async getMiDistrito(@Req() req: any) {
+    const userId = req.user?.id; // Obtenemos el ID del usuario desde el token JWT
+    if (!userId) {
+      throw new Error('El token no contiene un ID de usuario válido');
+    }
+
+    return this.distritoService.getMiDistrito(userId);
   }
 
   @Post()
