@@ -1,21 +1,28 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
+  @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Body() body: { email: string; password: string }) {
-    const { email, password } = body;
+  async login(@Request() req) {
+    return this.authService.login(req.user);
+  }
 
-    // Valida el usuario
-    const usuario = await this.authService.validateUsuario(email, password);
-    if (!usuario) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    // Genera y devuelve el token
-    return this.authService.login(usuario);
+  @Post('register')
+  async register(
+    @Body()
+    data: {
+      nombre: string;
+      email: string;
+      password: string;
+      rol: string; // Este campo es obligatorio
+      distritoId?: number; // Este campo es opcional
+    },
+  ) {
+    return this.authService.register(data);
   }
 }

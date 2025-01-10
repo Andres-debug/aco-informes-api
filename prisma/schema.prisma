@@ -12,7 +12,7 @@ model actividad {
   titulo           String
   descripcion      String
   fecha            DateTime
-  gastosTransporte Float
+  gastosTransporte Float?
   iglesiaId        Int
   pastorId         Int
   informeId        Int?

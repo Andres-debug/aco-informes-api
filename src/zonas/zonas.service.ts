@@ -2,26 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class ZonasService {
+export class ZonaService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Obtener todas las zonas
   async getAllZonas() {
     return this.prisma.zona.findMany({
-      include: { distritos: true },
+      include: { distrito: true },
     });
   }
 
+  // Crear una zona
   async createZona(data: { nombre: string; descripcion: string }) {
-    return this.prisma.zona.create({ data });
-  }
-
-  async getZonaById(id: number) {
-    return this.prisma.zona.findUnique({
-      where: { id },
-      include: { distritos: true },
+    return this.prisma.zona.create({
+      data,
     });
   }
 
+  // Actualizar una zona
   async updateZona(id: number, data: { nombre?: string; descripcion?: string }) {
     return this.prisma.zona.update({
       where: { id },
@@ -29,7 +27,10 @@ export class ZonasService {
     });
   }
 
+  // Eliminar una zona
   async deleteZona(id: number) {
-    return this.prisma.zona.delete({ where: { id } });
+    return this.prisma.zona.delete({
+      where: { id },
+    });
   }
 }

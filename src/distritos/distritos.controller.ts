@@ -1,61 +1,35 @@
-import { Controller, Get, Post, Put, Delete, Param, Body,UseGuards, Req } from '@nestjs/common';
-import { DistritosService } from './distritos.service';
-import { AuthGuard } from '@nestjs/passport';
-
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { DistritoService } from './distritos.service';
 
 @Controller('distritos')
-export class DistritosController {
-  constructor(private readonly distritosService: DistritosService) {}
+export class DistritoController {
+  constructor(private readonly distritoService: DistritoService) {}
 
   @Get()
   async getAllDistritos() {
-    return this.distritosService.getAllDistritos();
+    return this.distritoService.getAllDistritos();
+  }
+
+  @Get('zona/:zonaId')
+  async getDistritosByZona(@Param('zonaId') zonaId: string) {
+    return this.distritoService.getDistritosByZona(Number(zonaId));
   }
 
   @Post()
-  async createDistrito(
-    @Body() data: { nombreDistrito: string; zonaId: number },
-  ) {
-    return this.distritosService.createDistrito(data);
+  async createDistrito(@Body() data: { nombreDistrito: string; zonaId: number }) {
+    return this.distritoService.createDistrito(data);
   }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Get('mi-distrito')
-  async getMiDistrito(@Req() req: any) {
-    console.log('Usuario autenticado:', req.user); // Verifica que contiene `id`, `email` y `rol`
-  
-    const userId = req.user.id; // Obtén el ID del usuario desde el token
-    if (!userId || isNaN(userId)) {
-      throw new Error('El ID del usuario no es válido');
-    }
-  
-    return this.distritosService.getDistritoByPastor(userId);
-  }
-
-  @Get(':id')
-  async getDistritoById(@Param('id') id: string) {
-    const numericId = Number(id);
-    if (isNaN(numericId)) {
-      throw new Error('El ID debe ser un número válido');
-    }
-    return this.distritosService.getDistritoById(numericId);
-  }
-  
 
   @Put(':id')
   async updateDistrito(
     @Param('id') id: string,
     @Body() data: { nombreDistrito?: string; zonaId?: number },
   ) {
-    return this.distritosService.updateDistrito(Number(id), data);
+    return this.distritoService.updateDistrito(Number(id), data);
   }
 
   @Delete(':id')
   async deleteDistrito(@Param('id') id: string) {
-    return this.distritosService.deleteDistrito(Number(id));
+    return this.distritoService.deleteDistrito(Number(id));
   }
-
-
-  
-
 }

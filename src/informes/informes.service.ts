@@ -6,59 +6,78 @@ export class InformeService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Crear un informe
-  async createInforme(data: { titulo: string; periodoInicio: Date; periodoFin: Date; pastorId: number }) {
+  async createInforme(data: {
+    titulo: string;
+    periodoInicio: Date;
+    periodoFin: Date;
+    pastorId: number;
+    totalGastos: number;
+    totalActividades: number;
+  }) {
     return this.prisma.informe.create({
       data: {
         titulo: data.titulo,
         periodoInicio: data.periodoInicio,
         periodoFin: data.periodoFin,
-        totalGastos: 0, // Asignar un valor inicial a totalGastos
-        totalActividades: 0, // Asignar un valor inicial a totalActividades
-        pastorId: data.pastorId, // Vinculamos el informe con el pastor existente
+        totalGastos: data.totalGastos,
+        totalActividades: data.totalActividades,
+        usuario: { connect: { id: data.pastorId } },
       },
     });
   }
 
-  // Obtener todos los informes de un pastor
+  // Obtener informes de un pastor
   async getInformesByPastor(pastorId: number) {
     return this.prisma.informe.findMany({
       where: { pastorId },
+      include: { actividad: true },
+    });
+  }
+
+  // Obtener todos los informes (solo para administradores)
+  async getAllInformes() {
+    return this.prisma.informe.findMany({
       include: {
-        actividad: {
-          include: {
-            iglesia: true, // Incluye información de la iglesia en las actividades
-          },
-        },
+        actividad: { include: { iglesia: true } },
+        usuario: true,
       },
     });
   }
 
-  // Obtener un informe específico con todas sus actividades
+  // Obtener un informe por ID
   async getInformeById(id: number) {
     return this.prisma.informe.findUnique({
       where: { id },
       include: {
-        actividad: {
-          include: {
-            iglesia: true, // Incluye información de la iglesia
-          },
-        },
+        actividad: { include: { iglesia: true } },
+        usuario: true,
       },
     });
   }
 
-  // Actualizar un informe (solo datos del informe, no actividades)
-  async updateInforme(id: number, data: Partial<{ titulo: string; periodoInicio: Date; periodoFin: Date }>) {
+  // Actualizar un informe
+  async updateInforme(
+    id: number,
+    data: Partial<{
+      titulo: string;
+      periodoInicio: Date;
+      periodoFin: Date;
+      totalGastos: number;
+      totalActividades: number;
+    }>,
+  ) {
     return this.prisma.informe.update({
       where: { id },
       data,
     });
   }
 
-  // Eliminar un informe (y todas sus actividades asociadas)
+  // Eliminar un informe
   async deleteInforme(id: number) {
     return this.prisma.informe.delete({
       where: { id },
     });
   }
+
+  
 }

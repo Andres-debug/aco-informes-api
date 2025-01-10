@@ -9,9 +9,10 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { InformesModule } from './informes/informes.module';
 import { ActividadesModule } from './actividades/actividades.module';
+import { EstadisticasModule } from './estadisticas/estadisticas.module';
 
 @Module({
-  imports: [PrismaModule, ZonasModule, DistritosModule, IglesiasModule, UsuariosModule, AuthModule, InformesModule, ActividadesModule],
+  imports: [PrismaModule, ZonasModule, DistritosModule, IglesiasModule, UsuariosModule, AuthModule, InformesModule, ActividadesModule, EstadisticasModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -5,15 +5,14 @@ import { ActividadService } from './actividades.service';
 export class ActividadController {
   constructor(private readonly actividadService: ActividadService) {}
 
-  // Crear una actividad
   @Post()
   async createActividad(
     @Body()
     data: {
       titulo: string;
       descripcion: string;
-      fecha: Date;
-      gastosTransporte: number;
+      fecha: string; // Cambiado de Date a string
+      gastosTransporte?: number; // Opcional
       iglesiaId: number;
       pastorId: number;
       informeId?: number;
@@ -22,19 +21,16 @@ export class ActividadController {
     return this.actividadService.createActividad(data);
   }
 
-  // Obtener actividades de un informe
-  @Get('informe/:id')
-  async getActividadesByInforme(@Param('id') informeId: string) {
-    return this.actividadService.getActividadesByInforme(Number(informeId));
-  }
-
-  // Obtener actividades de un pastor
-  @Get('pastor/:id')
-  async getActividadesByPastor(@Param('id') pastorId: string) {
+  @Get('pastor/:pastorId')
+  async getActividadesByPastor(@Param('pastorId') pastorId: string) {
     return this.actividadService.getActividadesByPastor(Number(pastorId));
   }
 
-  // Actualizar una actividad
+  @Get('informe/:informeId')
+  async getActividadesByInforme(@Param('informeId') informeId: string) {
+    return this.actividadService.getActividadesByInforme(Number(informeId));
+  }
+
   @Put(':id')
   async updateActividad(
     @Param('id') id: string,
@@ -42,14 +38,18 @@ export class ActividadController {
     data: Partial<{
       titulo: string;
       descripcion: string;
-      fecha: Date;
-      gastosTransporte: number;
+      fecha: string; // Cambiado de Date a string
+      gastosTransporte?: number; // Opcional
+      informeId?: number;
     }>,
   ) {
-    return this.actividadService.updateActividad(Number(id), data);
+    const updatedData = {
+      ...data,
+      fecha: data.fecha ? new Date(data.fecha) : undefined,
+    };
+    return this.actividadService.updateActividad(Number(id), updatedData);
   }
 
-  // Eliminar una actividad
   @Delete(':id')
   async deleteActividad(@Param('id') id: string) {
     return this.actividadService.deleteActividad(Number(id));

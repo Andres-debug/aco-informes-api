@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { IglesiasService } from './iglesias.service';
-import { IglesiasController } from './iglesias.controller';
+import { IglesiaService } from './iglesias.service';
+import { IglesiaController } from './iglesias.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Module({
-  providers: [IglesiasService,PrismaService],
-  controllers: [IglesiasController]
+  providers: [IglesiaService,PrismaService,JwtAuthGuard],
+  controllers: [IglesiaController]
 })
 export class IglesiasModule {}

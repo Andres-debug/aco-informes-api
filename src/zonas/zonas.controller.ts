@@ -1,23 +1,18 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
-import { ZonasService } from './zonas.service';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { ZonaService } from './zonas.service';
 
 @Controller('zonas')
-export class ZonasController {
-  constructor(private readonly zonasService: ZonasService) {}
+export class ZonaController {
+  constructor(private readonly zonaService: ZonaService) {}
 
   @Get()
   async getAllZonas() {
-    return this.zonasService.getAllZonas();
+    return this.zonaService.getAllZonas();
   }
 
   @Post()
   async createZona(@Body() data: { nombre: string; descripcion: string }) {
-    return this.zonasService.createZona(data);
-  }
-
-  @Get(':id')
-  async getZonaById(@Param('id') id: string) {
-    return this.zonasService.getZonaById(Number(id));
+    return this.zonaService.createZona(data);
   }
 
   @Put(':id')
@@ -25,11 +20,11 @@ export class ZonasController {
     @Param('id') id: string,
     @Body() data: { nombre?: string; descripcion?: string },
   ) {
-    return this.zonasService.updateZona(Number(id), data);
+    return this.zonaService.updateZona(Number(id), data);
   }
 
   @Delete(':id')
   async deleteZona(@Param('id') id: string) {
-    return this.zonasService.deleteZona(Number(id));
+    return this.zonaService.deleteZona(Number(id));
   }
 }
