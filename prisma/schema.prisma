@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+
 }
 
 datasource db {
@@ -18,8 +19,9 @@ model actividad {
   informeId        Int?
   createdAt        DateTime @default(now())
   iglesia          iglesia  @relation(fields: [iglesiaId], references: [id], map: "Actividad_iglesiaId_fkey")
-  informe          informe? @relation(fields: [informeId], references: [id], map: "Actividad_informeId_fkey")
   usuario          usuario  @relation(fields: [pastorId], references: [id], map: "Actividad_pastorId_fkey")
+  informe          informe? @relation(fields: [informeId], references: [id]) // Relación con informe
+
 
   @@index([iglesiaId], map: "Actividad_iglesiaId_fkey")
   @@index([informeId], map: "Actividad_informeId_fkey")
@@ -33,6 +35,7 @@ model distrito {
   zona           zona      @relation(fields: [zonaId], references: [id], map: "Distrito_zonaId_fkey")
   iglesia        iglesia[]
   usuario        usuario[]
+  informes      informe[]   // Relación con informes
 
   @@index([zonaId], map: "Distrito_zonaId_fkey")
 }
@@ -43,25 +46,32 @@ model iglesia {
   distritoId    Int
   actividad     actividad[]
   distrito      distrito    @relation(fields: [distritoId], references: [id], map: "Iglesia_distritoId_fkey")
+   informes      informe[]   // Relación con informes
 
   @@index([distritoId], map: "Iglesia_distritoId_fkey")
 }
-
 model informe {
   id               Int         @id @default(autoincrement())
   titulo           String
+  tipoInforme      String      // 'zona', 'distrito', 'iglesia', 'pastor'
+  zonaId           Int?
+  distritoId       Int?
+  iglesiaId        Int?
+  usuarioId        Int?
   periodoInicio    DateTime
   periodoFin       DateTime
-  pastorId         Int
   totalGastos      Float
   totalActividades Int
   createdAt        DateTime    @default(now())
-  actividad        actividad[]
-  usuario          usuario     @relation(fields: [pastorId], references: [id], map: "Informe_pastorId_fkey")
 
-  @@index([pastorId], map: "Informe_pastorId_fkey")
+  // Relaciones
+  zona             zona?       @relation(fields: [zonaId], references: [id])
+  distrito         distrito?   @relation(fields: [distritoId], references: [id])
+  iglesia          iglesia?    @relation(fields: [iglesiaId], references: [id])
+  usuario          usuario?    @relation(fields: [usuarioId], references: [id])
+
+  actividad actividad[]
 }
-
 model usuario {
   id         Int         @id @default(autoincrement())
   nombre     String
@@ -72,6 +82,7 @@ model usuario {
   actividad  actividad[]
   informe    informe[]
   distrito   distrito?   @relation(fields: [distritoId], references: [id], map: "Usuario_distritoId_fkey")
+  
 
   @@index([distritoId], map: "Usuario_distritoId_fkey")
 }
@@ -81,4 +92,5 @@ model zona {
   nombre      String
   descripcion String
   distrito    distrito[]
+  informes      informe[]   // Relación con informes
 }

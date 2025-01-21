@@ -1,83 +1,149 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class InformeService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Crear un informe
-  async createInforme(data: {
-    titulo: string;
-    periodoInicio: Date;
-    periodoFin: Date;
-    pastorId: number;
-    totalGastos: number;
-    totalActividades: number;
-  }) {
-    return this.prisma.informe.create({
-      data: {
-        titulo: data.titulo,
-        periodoInicio: data.periodoInicio,
-        periodoFin: data.periodoFin,
-        totalGastos: data.totalGastos,
-        totalActividades: data.totalActividades,
-        usuario: { connect: { id: data.pastorId } },
-      },
-    });
-  }
-
-  // Obtener informes de un pastor
-  async getInformesByPastor(pastorId: number) {
-    return this.prisma.informe.findMany({
-      where: { pastorId },
-      include: { actividad: true },
-    });
-  }
-
-  // Obtener todos los informes (solo para administradores)
-  async getAllInformes() {
-    return this.prisma.informe.findMany({
-      include: {
-        actividad: { include: { iglesia: true } },
-        usuario: true,
-      },
-    });
-  }
-
-  // Obtener un informe por ID
-  async getInformeById(id: number) {
-    return this.prisma.informe.findUnique({
-      where: { id },
-      include: {
-        actividad: { include: { iglesia: true } },
-        usuario: true,
-      },
-    });
-  }
-
-  // Actualizar un informe
-  async updateInforme(
-    id: number,
-    data: Partial<{
-      titulo: string;
-      periodoInicio: Date;
-      periodoFin: Date;
-      totalGastos: number;
-      totalActividades: number;
-    }>,
+  // Obtener estadísticas por tipo (zona, distrito, iglesia, pastor)
+  async getStatisticsByTipo(
+    tipoInforme: 'zona' | 'distrito' | 'iglesia' | 'pastor',
+    referenciaId: number,
+    periodoInicio: Date,
+    periodoFin: Date,
   ) {
-    return this.prisma.informe.update({
-      where: { id },
-      data,
-    });
+    // Validar fechas
+    if (isNaN(periodoInicio.getTime()) || isNaN(periodoFin.getTime())) {
+      throw new BadRequestException('El formato de las fechas no es válido.');
+    }
+    if (periodoInicio > periodoFin) {
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin.');
+    }
+
+    // Consultar datos según el tipo
+    switch (tipoInforme) {
+      case 'zona':
+        return this.getZonaStatistics(referenciaId, periodoInicio, periodoFin);
+      case 'distrito':
+        return this.getDistritoStatistics(referenciaId, periodoInicio, periodoFin);
+      case 'iglesia':
+        return this.getIglesiaStatistics(referenciaId, periodoInicio, periodoFin);
+      case 'pastor':
+        return this.getPastorStatistics(referenciaId, periodoInicio, periodoFin);
+      default:
+        throw new BadRequestException('Tipo de informe no válido.');
+    }
   }
 
-  // Eliminar un informe
-  async deleteInforme(id: number) {
-    return this.prisma.informe.delete({
-      where: { id },
+  // Estadísticas por zona
+  private async getZonaStatistics(zonaId: number, periodoInicio: Date, periodoFin: Date) {
+    const distritos = await this.prisma.distrito.findMany({
+      where: { zonaId },
+      include: {
+        iglesia: {
+          include: {
+            actividad: {
+              where: {
+                fecha: {
+                  gte: periodoInicio,
+                  lte: periodoFin,
+                },
+              },
+            },
+          },
+        },
+      },
     });
+
+    const stats = distritos.map((distrito) => {
+      const actividades = distrito.iglesia.flatMap((iglesia) => iglesia.actividad);
+      const totalGastos = actividades.reduce((sum, act) => sum + (act.gastosTransporte || 0), 0);
+      return {
+        distrito: distrito.nombreDistrito,
+        totalActividades: actividades.length,
+        totalGastos,
+      };
+    });
+
+    return { tipo: 'zona', zonaId, stats };
   }
 
-  
+  // Estadísticas por distrito
+  private async getDistritoStatistics(distritoId: number, periodoInicio: Date, periodoFin: Date) {
+    const iglesias = await this.prisma.iglesia.findMany({
+      where: { distritoId },
+      include: {
+        actividad: {
+          where: {
+            fecha: {
+              gte: periodoInicio,
+              lte: periodoFin,
+            },
+          },
+        },
+      },
+    });
+
+    const stats = iglesias.map((iglesia) => {
+      const totalGastos = iglesia.actividad.reduce((sum, act) => sum + (act.gastosTransporte || 0), 0);
+      return {
+        iglesia: iglesia.nombreIglesia,
+        totalActividades: iglesia.actividad.length,
+        totalGastos,
+      };
+    });
+
+    return { tipo: 'distrito', distritoId, stats };
+  }
+
+  // Estadísticas por iglesia
+  private async getIglesiaStatistics(iglesiaId: number, periodoInicio: Date, periodoFin: Date) {
+    const actividades = await this.prisma.actividad.findMany({
+      where: {
+        iglesiaId,
+        fecha: {
+          gte: periodoInicio,
+          lte: periodoFin,
+        },
+      },
+    });
+
+    const totalGastos = actividades.reduce((sum, act) => sum + (act.gastosTransporte || 0), 0);
+
+    return {
+      tipo: 'iglesia',
+      iglesiaId,
+      totalActividades: actividades.length,
+      totalGastos,
+    };
+  }
+
+  // Estadísticas por pastor
+  private async getPastorStatistics(pastorId: number, periodoInicio: Date, periodoFin: Date) {
+    const actividades = await this.prisma.actividad.findMany({
+      where: {
+        pastorId,
+        fecha: {
+          gte: periodoInicio,
+          lte: periodoFin,
+        },
+      },
+      include: { iglesia: true },
+    });
+
+    const actividadesPorIglesia = actividades.reduce((acc, act) => {
+      acc[act.iglesia.nombreIglesia] = (acc[act.iglesia.nombreIglesia] || 0) + 1;
+      return acc;
+    }, {});
+
+    const totalGastos = actividades.reduce((sum, act) => sum + (act.gastosTransporte || 0), 0);
+
+    return {
+      tipo: 'pastor',
+      pastorId,
+      totalActividades: actividades.length,
+      totalGastos,
+      actividadesPorIglesia,
+    };
+  }
 }
